@@ -1,2 +1,2 @@
 # bluetooth-server
-Bluetooth server in C
+Create a simple bluetooth RFCOMM server in C
