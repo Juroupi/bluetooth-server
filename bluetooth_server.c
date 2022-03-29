@@ -17,7 +17,9 @@ static void* onConnectionProc(void* args) {
 	
 	ConnectionInfos* infos = args;
 	
-	*infos->loop = (*infos->onConnection)(infos->client);
+	if (!(*infos->onConnection)(infos->client)) {
+		*infos->loop = 0;
+	}
 
 	close(infos->client);
 	
