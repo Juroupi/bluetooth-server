@@ -29,7 +29,7 @@ static int onConnection(BluetoothClient client) {
 
 int main() {
 	
-	if (!bluetoothServer(1, &onConnection)) {
+	if (!bluetoothServer(1, &onConnection, 0)) {
 		puts("error");
 		return 1;
 	}
