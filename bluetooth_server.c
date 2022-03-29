@@ -1,12 +1,30 @@
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
 
 #include "bluetooth_server.h"
 
-int bluetoothServer(int channel, int (*onConnection)(BluetoothClient client)) {
+typedef struct _ConnectionInfos {
+	int* loop;
+	int (*onConnection)(BluetoothClient client);
+	BluetoothClient client;
+} ConnectionInfos;
+
+static void* onConnectionProc(void* args) {
+	
+	ConnectionInfos* infos = args;
+	
+	*infos->loop = (*infos->onConnection)(infos->client);
+
+	close(infos->client);
+	
+	return NULL;
+}
+
+int bluetoothServer(int channel, int (*onConnection)(BluetoothClient client), int inThreads) {
 	
 	int server = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	if (server < 0) {
@@ -39,10 +57,18 @@ int bluetoothServer(int channel, int (*onConnection)(BluetoothClient client)) {
 			close(server);
 			return 0;
 		}
-
-		loop = (*onConnection)(client);
 		
-		close(client);
+		ConnectionInfos infos;
+		infos.loop = &loop;
+		infos.onConnection = onConnection;
+		infos.client = client;
+
+		if (inThreads) {
+			pthread_t threadId;
+			pthread_create(&threadId, NULL, &onConnectionProc, &infos);
+		} else {
+			onConnectionProc(&infos);
+		}
 		
 	} while (loop);
 	
@@ -57,7 +83,7 @@ int receiveData(BluetoothClient client, void* data, int size) {
 		return 0;
 	}
 	
-	int n = read(client, data, size);
+	int n = recv(client, data, size, 0);
 	if (n < 0) {
 		return -1;
 	}
@@ -83,7 +109,7 @@ int sendData(BluetoothClient client, const void* data, int size) {
 		return 0;
 	}
 	
-	int n = write(client, data, size);
+	int n = send(client, data, size, 0);
 	if (n < 0) {
 		return -1;
 	}

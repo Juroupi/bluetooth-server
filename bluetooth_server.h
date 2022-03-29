@@ -9,7 +9,7 @@ typedef int BluetoothClient;
  * the server stops when onConnection() returns 0
  * @return 0 on error, another value otherwise
  */
-int bluetoothServer(int channel, int (*onConnection)(BluetoothClient client));
+int bluetoothServer(int channel, int (*onConnection)(BluetoothClient client), int inThreads);
 
 /**
  * Receive data from client
